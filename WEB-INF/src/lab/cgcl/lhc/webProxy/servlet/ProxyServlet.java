@@ -6,12 +6,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import lab.cgcl.lhc.webProxy.Proxy;
+import lab.cgcl.lhc.webProxy.parser.Pharser;
+
 import org.apache.http.client.ClientProtocolException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
-import lab.cgcl.lhc.webProxy.Proxy;
-import lab.cgcl.lhc.webProxy.parser.Pharser;
 
 public class ProxyServlet extends HttpServlet{
 	
@@ -22,15 +22,18 @@ public class ProxyServlet extends HttpServlet{
 
 	@Override
 	public void doGet(HttpServletRequest request , HttpServletResponse response){
+		response.setCharacterEncoding("UTF-8");
 		String url = request.getParameter("url");
 		Proxy proxy = new Proxy();
 		try {
 			String result = proxy.doProxy(url);
-			Document doc = Jsoup.parse(result);
-			Pharser.redirectURI(doc , "http://115.156.232.46:8089/WebProxy/browser");
-	      	String guideBar = "<div>your url is ------------\n\r" + url + "</div>";
-	      	Pharser.addGuideBar(doc, guideBar);
-	      	result  = doc.toString();
+			if (result.contains("<html")) {
+				Document doc = Jsoup.parse(result);
+				Pharser.redirectURI(doc , "http://localhost:8080/WebProxy/browser" ,url);
+		      	String guideBar = "<div>your url is ------------\n\r" + url + "</div>";
+		      	Pharser.addGuideBar(doc, guideBar);
+		      	result  = doc.toString();
+			}
 			response.getWriter().write(result);
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block

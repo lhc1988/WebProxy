@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
 
+import lab.cgcl.lhc.webProxy.parser.Pharser;
+
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -34,7 +36,7 @@ public class Proxy {
 //		}
 		
 		String url = "http://www.google.com.cn/ass/101";
-		System.out.println(getBaseUri(url));
+		System.out.println(getDomain(url));
 	}
 	
 	public String doProxy(String url) throws ClientProtocolException, IOException {
@@ -43,26 +45,38 @@ public class Proxy {
 		
         try {
 //            HttpHost target = new HttpHost("issues.apache.org", 443, "https");
-        	HttpHost target = new HttpHost(URLDecoder.decode(url , "UTF-8"));
+        	//这里是主机名，
+        	String decoded_url = URLDecoder.decode(url , "UTF-8");
+        	String URI = Pharser.getDomain(decoded_url);
+        	HttpHost target = null ;
+        	if (URI.startsWith("https")) {
+        		target = new HttpHost(URI.substring(8 , URI.length()) , 443 , "https" );
+        	} else if (URI.startsWith("http")) {
+        		target = new HttpHost(URI.substring(7 , URI.length()));
+        	} else {
+        		target = new HttpHost(URI);
+        	}
             HttpHost proxy = new HttpHost(proxyAddr, proxyPort, proxyScheme);
 
             RequestConfig config = RequestConfig.custom().setProxy(proxy)
             		.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY).build();
-            HttpGet request = new HttpGet("/");
+            
+            String path = decoded_url.substring(URI.length(), decoded_url.length());
+            HttpGet request = new HttpGet(path);
             request.setConfig(config);
 
-            System.out.println("executing request to " + target + " via " + proxy);
+            System.out.println("executing request to " + decoded_url + " via " + proxy);
             CloseableHttpResponse response = httpclient.execute(target, request);
             try {
                 HttpEntity entity = response.getEntity();
 
-                System.out.println("----------------------------------------");
-                System.out.println(response.getStatusLine());
-                Header[] headers = response.getAllHeaders();
-                for (int i = 0; i<headers.length; i++) {
-                    System.out.println(headers[i]);
-                }
-                System.out.println("----------------------------------------");
+//                System.out.println("----------------------------------------");
+//                System.out.println(response.getStatusLine());
+//                Header[] headers = response.getAllHeaders();
+//                for (int i = 0; i<headers.length; i++) {
+//                    System.out.println(headers[i]);
+//                }
+//                System.out.println("----------------------------------------");
 
                 if (entity != null) {
                 	result = getHttpResponse(entity.getContent());
@@ -131,7 +145,7 @@ public class Proxy {
 		Proxy.proxyScheme = proxyScheme;
 	}
 	
-	protected static String getBaseUri (String url) {
+	protected static String getDomain (String url) {
 		char split = '/';
 		int index = -1;
 		for (int i = 0 ; i <3 ; i++) {
