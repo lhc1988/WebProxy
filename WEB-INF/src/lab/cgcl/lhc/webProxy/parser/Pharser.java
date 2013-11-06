@@ -18,19 +18,24 @@ public class Pharser {
 	}
 	
 	public static Document redirectURI (Document document, String localURL , String baseURI) {
+		String remoteDomain = getDomain(baseURI);
 		//deal with src=
 		Elements srcs = document.getElementsByAttribute("src");
 		for(Element ele : srcs) {
 			String sourceURI = ele.attr("src");
-			//TODO ∞—œ‡∂‘¬∑æ∂Õ≥“ª≥…æ¯∂‘¬∑æ∂
-			if (!sourceURI.startsWith("http")) {
-				sourceURI = baseURI + sourceURI;
+			//Âà§Êñ≠ÊòØÂê¶ÁªùÂØπË∑ØÂæÑ
+			if (!sourceURI.contains("//")) {
+				//Áõ∏ÂØπÊ†πË∑ØÂæÑ
+				if (sourceURI.startsWith("/")) {
+					sourceURI = remoteDomain + sourceURI;
+				} else { //Áõ∏ÂØπÂΩìÂâçË∑ØÂæÑ
+					sourceURI = baseURI + sourceURI;
+				}
 			}
 			try {
 				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
 				ele.attr("src", proxyURI);
 			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -38,14 +43,35 @@ public class Pharser {
 		Elements hrefs = document.getElementsByAttribute("href");
 		for(Element ele : hrefs) {
 			String sourceURI = ele.attr("href");
-			if (!sourceURI.startsWith("http")) {
-				sourceURI = baseURI + sourceURI;
+			if (!sourceURI.contains("//")) {
+				if (sourceURI.startsWith("/")) {
+					sourceURI = remoteDomain + sourceURI;
+				} else {
+					sourceURI = baseURI + sourceURI;
+				}
 			}
 			try {
 				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
 				ele.attr("href", proxyURI);
 			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		//deal with url() 
+		Elements urls = document.getElementsByAttribute("url");
+		for(Element ele : urls) {
+			String sourceURI = ele.attr("url");
+			if (!sourceURI.contains("//")) {
+				if (sourceURI.startsWith("/")) {
+					sourceURI = remoteDomain + sourceURI;
+				} else {
+					sourceURI = baseURI + sourceURI;
+				}
+			}
+			try {
+				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
+				ele.attr("href", proxyURI);
+			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
 		}
@@ -54,15 +80,30 @@ public class Pharser {
 	}
 	
 	/**
-	 * »°µ√”Ú√˚
+	 * Ëé∑ÂèñÂüüÂêç
 	 * @param url
 	 * @return
 	 */
+//	public static String getDomain (String url) {
+//		final char split = '/';
+//		final String root = "//";
+//		int rootindex = url.indexOf(root);
+//		int lastindex = url.indexOf(split, rootindex + 2);
+//		if (rootindex == -1) 
+//			return url;
+//		else
+//			return url.substring(rootindex +2  , lastindex);
+//	}
+	
 	public static String getDomain (String url) {
 		int index = -1;
+//		int start = 0;
 		final char split = '/';
-		if (url.startsWith("http")) {
+		if (url.startsWith("http") || url.startsWith("//")) {
 			for (int i = 0 ; i <3 ; i++) {
+//				if (i == 2) {
+//					start = index;
+//				}
 				index = url.indexOf(split , index+1);
 			}
 		} else {
@@ -71,6 +112,7 @@ public class Pharser {
 		if (index == -1)
 			return url;
 		else 
+//			return url.substring(start +1 , index);
 			return url.substring(0 , index);
 	}
 	

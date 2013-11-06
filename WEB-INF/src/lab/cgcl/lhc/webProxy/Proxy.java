@@ -19,10 +19,30 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 public class Proxy {
 	
 	private BasicCookieStore cookieStore;
+	private Header[] headers;
+	private String content;
+	
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
+	public Header[] getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(Header[] headers) {
+		this.headers = headers;
+	}
+
 	public static void main(String[] args) {
 //		Proxy proxy = new Proxy() ;
 //		try {
@@ -36,39 +56,55 @@ public class Proxy {
 //		}
 		
 		String url = "http://www.google.com.cn/ass/101";
-		System.out.println(getDomain(url));
+		System.out.println(Pharser.getDomain(url));
 	}
 	
-	public String doProxy(String url) throws ClientProtocolException, IOException {
-		String result = "";
+	public void doProxy(String url) throws ClientProtocolException, IOException {
 		CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-		
         try {
-//            HttpHost target = new HttpHost("issues.apache.org", 443, "https");
-        	//这里是主机名，
         	String decoded_url = URLDecoder.decode(url , "UTF-8");
-        	String URI = Pharser.getDomain(decoded_url);
+        	String domain = Pharser.getDomain(decoded_url);
         	HttpHost target = null ;
-        	if (URI.startsWith("https")) {
-        		target = new HttpHost(URI.substring(8 , URI.length()) , 443 , "https" );
-        	} else if (URI.startsWith("http")) {
-        		target = new HttpHost(URI.substring(7 , URI.length()));
+        	if (domain.startsWith("https")) {
+        		target = new HttpHost(domain.substring(8 , domain.length()) , 443 , "https" );
+        	} else if (domain.startsWith("http")) {
+        		target = new HttpHost(domain.substring(7 , domain.length()));
         	} else {
-        		target = new HttpHost(URI);
+        		target = new HttpHost(domain);
         	}
+        	
+//        	if (decoded_url.startsWith("http")) {
+//        		target = new HttpHost(decoded_url.substring(7 , decoded_url.length()));
+//        	} 
+        	//--------------
             HttpHost proxy = new HttpHost(proxyAddr, proxyPort, proxyScheme);
 
             RequestConfig config = RequestConfig.custom().setProxy(proxy)
             		.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY).build();
             
-            String path = decoded_url.substring(URI.length(), decoded_url.length());
+            String path = decoded_url.substring(domain.length(), decoded_url.length());
             HttpGet request = new HttpGet(path);
+//            HttpGet request = new HttpGet("/");
             request.setConfig(config);
 
             System.out.println("executing request to " + decoded_url + " via " + proxy);
             CloseableHttpResponse response = httpclient.execute(target, request);
+            if ( response.getStatusLine().getStatusCode() != 200) {
+            	System.out.println("error:" + response.getStatusLine().getStatusCode() );
+            	return;
+            }
             try {
-                HttpEntity entity = response.getEntity();
+            	headers = response.getAllHeaders();
+            	HttpEntity entity = response.getEntity();
+//            	String charset = entity.getContentEncoding().getValue();
+            	content = EntityUtils.toString(entity );
+//            	content = getHttpResponse(entity.getContent());
+            } catch (Exception e) {
+            	e.printStackTrace();
+            }
+            finally {
+            	response.close();
+            }
 
 //                System.out.println("----------------------------------------");
 //                System.out.println(response.getStatusLine());
@@ -78,112 +114,96 @@ public class Proxy {
 //                }
 //                System.out.println("----------------------------------------");
 
-                if (entity != null) {
-                	result = getHttpResponse(entity.getContent());
-                	
-                }
-            } finally {
-                response.close();
-            }
         } finally {
             httpclient.close();
         }
-        return result;
 	}
 	
-	private static String url = "";
-	private static int port ;
-	private static String scheme = "http";
-	public static String getUrl() {
+	private String url = "";
+	private int port ;
+	private String scheme = "http";
+	
+	private String proxyAddr = "127.0.0.1";
+	private int proxyPort = 8087;
+	private String proxyScheme = "http";
+	
+	public String getUrl() {
 		return url;
 	}
 
-	public static void setUrl(String url) {
-		Proxy.url = url;
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
-	public static int getPort() {
+	public int getPort() {
 		return port;
 	}
 
-	public static void setPort(int port) {
-		Proxy.port = port;
+	public void setPort(int port) {
+		this.port = port;
 	}
 
-	public static String getScheme() {
+	public String getScheme() {
 		return scheme;
 	}
 
-	public static void setScheme(String scheme) {
-		Proxy.scheme = scheme;
+	public void setScheme(String scheme) {
+		this.scheme = scheme;
 	}
-	
-	private static String proxyAddr = "127.0.0.1";
-	private static int proxyPort = 8087;
-	private static String proxyScheme = "http";
-	public static String getProxyAddr() {
+
+	public String getProxyAddr() {
 		return proxyAddr;
 	}
 
-	public static void setProxyAddr(String proxyAddr) {
-		Proxy.proxyAddr = proxyAddr;
+	public void setProxyAddr(String proxyAddr) {
+		this.proxyAddr = proxyAddr;
 	}
 
-	public static int getProxyPort() {
+	public int getProxyPort() {
 		return proxyPort;
 	}
 
-	public static void setProxyPort(int proxyPort) {
-		Proxy.proxyPort = proxyPort;
+	public void setProxyPort(int proxyPort) {
+		this.proxyPort = proxyPort;
 	}
 
-	public static String getProxyScheme() {
+	public String getProxyScheme() {
 		return proxyScheme;
 	}
 
-	public static void setProxyScheme(String proxyScheme) {
-		Proxy.proxyScheme = proxyScheme;
+	public void setProxyScheme(String proxyScheme) {
+		this.proxyScheme = proxyScheme;
 	}
-	
-	protected static String getDomain (String url) {
-		char split = '/';
-		int index = -1;
-		for (int i = 0 ; i <3 ; i++) {
-			index = url.indexOf(split , index+1);
-		}
-		
-		return url.substring(0 , index);
-		
-	}
-	
+
 	public static String getHttpResponse(InputStream in)
 	{
-	String result;
-	StringBuffer temp = new StringBuffer();
-	BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
-	try {
-		for(String tempstr = ""; (tempstr = buffer.readLine()) != null;)
-		temp = temp.append(tempstr);
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} finally {
+		String result;
+		StringBuffer temp = new StringBuffer();
+		BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
 		try {
-			buffer.close();
+			for(String tempstr = ""; (tempstr = buffer.readLine()) != null;)
+			temp = temp.append(tempstr);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			try {
+				buffer.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
-		try {
-			in.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		result = temp.toString().trim();
+		return result;
 	}
-	result = temp.toString().trim();
-	return result;
-	}
+
 		
 }

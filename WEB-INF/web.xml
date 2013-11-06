@@ -19,8 +19,8 @@
 </filter> 
 
 <filter-mapping>
-<filter-name>CharacterEncoding</filter-name>
-<url-pattern>/*</url-pattern>
+	<filter-name>CharacterEncoding</filter-name>
+	<url-pattern>/*</url-pattern>
 </filter-mapping> 
 
 
@@ -28,6 +28,10 @@
 <servlet> 
 	<servlet-name>entry</servlet-name> 
 	<servlet-class>lab.cgcl.lhc.webProxy.servlet.ProxyServlet</servlet-class> 
+	<init-param>
+	    <param-name>localURL</param-name>
+	    <param-value>http://localhost:8089/WebProxy/browser</param-value>
+    </init-param>
 </servlet>
 
 <servlet-mapping> 
