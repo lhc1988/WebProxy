@@ -19,64 +19,13 @@ public class Pharser {
 	
 	public static Document redirectURI (Document document, String localURL , String baseURI) {
 		String remoteDomain = getDomain(baseURI);
-		//deal with src=
-		Elements srcs = document.getElementsByAttribute("src");
-		for(Element ele : srcs) {
-			String sourceURI = ele.attr("src");
-			//判断是否绝对路径
-			if (!sourceURI.contains("//")) {
-				//相对根路径
-				if (sourceURI.startsWith("/")) {
-					sourceURI = remoteDomain + sourceURI;
-				} else { //相对当前路径
-					sourceURI = baseURI + sourceURI;
-				}
-			}
-			try {
-				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
-				ele.attr("src", proxyURI);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		//deal with href=
-		Elements hrefs = document.getElementsByAttribute("href");
-		for(Element ele : hrefs) {
-			String sourceURI = ele.attr("href");
-			if (!sourceURI.contains("//")) {
-				if (sourceURI.startsWith("/")) {
-					sourceURI = remoteDomain + sourceURI;
-				} else {
-					sourceURI = baseURI + sourceURI;
-				}
-			}
-			try {
-				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
-				ele.attr("href", proxyURI);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		//deal with url() 
-		Elements urls = document.getElementsByAttribute("url");
-		for(Element ele : urls) {
-			String sourceURI = ele.attr("url");
-			if (!sourceURI.contains("//")) {
-				if (sourceURI.startsWith("/")) {
-					sourceURI = remoteDomain + sourceURI;
-				} else {
-					sourceURI = baseURI + sourceURI;
-				}
-			}
-			try {
-				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
-				ele.attr("href", proxyURI);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		return document;
+		changeURL( "src" , document , localURL , baseURI , remoteDomain);
+		changeURL( "href" , document , localURL , baseURI , remoteDomain);
+		changeURL( "action" , document , localURL , baseURI , remoteDomain);
 		
+		//CSS
+		
+		return document;
 	}
 	
 	/**
@@ -94,6 +43,40 @@ public class Pharser {
 //		else
 //			return url.substring(rootindex +2  , lastindex);
 //	}
+	
+	
+	protected static void changeURL (String attribute , Document document, String localURL , String baseURI ,String remoteDomain) {
+		//deal with action
+		Elements actions = document.getElementsByAttribute(attribute);
+		for(Element ele : actions) {
+			String sourceURI = ele.attr(attribute);
+			if (!sourceURI.contains("//")) {
+				if (sourceURI.startsWith("/")) {
+					sourceURI = remoteDomain + sourceURI;
+				} else {
+					sourceURI = baseURI + sourceURI;
+				}
+			}
+			try {
+				String proxyURI = localURL + "?url=" + URLEncoder.encode(sourceURI , "UTF-8");
+				ele.attr(attribute, proxyURI);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	/**
+	 * 解析css中的 url()
+	 * @param attribute
+	 * @param document
+	 * @param localURL
+	 * @param baseURI
+	 * @param remoteDomain
+	 */
+	protected static void changeURLinCSS (String attribute , Document document, String localURL , String baseURI ,String remoteDomain){
+		
+	}
 	
 	public static String getDomain (String url) {
 		int index = -1;
